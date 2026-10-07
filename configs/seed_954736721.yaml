@@ -1,0 +1,67 @@
+# 多种子重复实验配置：由 secrets.randbelow 生成的随机大整数种子，其余与 default.yaml 一致。
+# 数据划分不随此 seed 变化（沿用 build_processed 的固定划分），仅训练阶段随机性不同。
+seed: 954736721
+
+data:
+  num_classes: 4
+  label_names: [正常, 推销, 刷单, 钓鱼]   # 标签顺序即专家顺序：专家 i 负责类别 i
+  max_length: 128
+  processed_dir: data/processed
+  golden_set: data/golden_test_set.jsonl   # 黄金测试集，绝不进入训练
+
+model:
+  name: hfl/chinese-macbert-base
+  hidden_size: 768
+  dropout: 0.1
+
+peft:
+  enabled: true
+  method: dora            # dora | lora | none（全量微调，用于消融）
+  r: 8
+  alpha: 16
+  dropout: 0.1
+  target_modules: [query, key, value]
+
+router:
+  dim: 256
+  dropout: 0.1
+
+experts:
+  # 层数 = 隐藏层层数（输出层另计）；pooling: mean | attention | cls | mean_max
+  # self_class: 该专家负责的类别（按 label_names 下标绑定，与列表顺序无关）
+  # augment: 阶段二该专家的数据增强组合（见 antifraud/data/augment.py）
+  - {name: 推销, pooling: mean,      hidden: 512, layers: 2, self_class: 1, augment: [emoji_insert]}
+  - {name: 刷单, pooling: attention, hidden: 256, layers: 3, self_class: 2, augment: []}
+  - {name: 钓鱼, pooling: cls,       hidden: 512, layers: 2, self_class: 3, augment: []}
+  - {name: 正常, pooling: mean_max,  hidden: 256, layers: 2, self_class: 0, augment: []}
+
+loss:
+  lambda_self: 3.0        # 专家对自己负责类别的损失加权 λ_{i,i}
+  alpha_bal: 0.01         # 负载均衡损失系数（全程固定，监控 f_i/p_i 后手动调整）
+  class_weights: auto     # auto = 按训练集频率倒数；或显式 [w正常, w推销, w刷单, w钓鱼]
+
+train:
+  weight_decay: 0.01
+  warmup_ratio: 0.06
+  stage1:
+    mlm_epochs: 2
+    mlm_lr: 5.0e-5
+    mlm_probability: 0.15
+    clf_epochs: 3
+    clf_lr: 2.0e-5
+    batch_size: 32
+  stage2:
+    epochs: 4
+    lr: 1.0e-3            # 专家 MLP 为新增参数，可用较大学习率
+    batch_size: 64
+  stage3:
+    router_epochs: 6
+    router_lr: 1.0e-3
+    joint_epochs: 2
+    joint_lr: 5.0e-4
+    batch_size: 64
+
+serving:
+  onnx_path: checkpoints/onnx/model.onnx
+  api_host: 127.0.0.1
+  api_port: 8000

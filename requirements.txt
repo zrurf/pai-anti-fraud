@@ -1,0 +1,25 @@
+# 核心训练
+torch>=2.2
+transformers>=4.44
+peft>=0.12
+numpy
+pandas
+pyyaml
+tqdm
+
+# 传统基线与统计检验
+scikit-learn
+scipy
+
+# 数据下载与格式
+huggingface_hub
+pylance
+
+# 导出与部署
+onnx
+onnxruntime
+fastapi
+uvicorn
+
+# 可选：LLM 合成数据质量过滤（方案"LLM 合成数据"节）
+# bert-score

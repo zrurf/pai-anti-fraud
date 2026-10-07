@@ -1,0 +1,16 @@
+{
+  "model_name": "hfl/chinese-macbert-base",
+  "label_names": [
+    "正常",
+    "推销",
+    "刷单",
+    "钓鱼"
+  ],
+  "expert_names": [
+    "推销",
+    "刷单",
+    "钓鱼",
+    "正常"
+  ],
+  "attn_expert": "刷单"
+}

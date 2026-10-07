@@ -1,0 +1,37 @@
+# 数据
+/rawdata/
+/dataset/
+/data/
+
+# 模型与训练产物
+# backbone 底座权重
+/models/
+# 训练工作区
+/checkpoints/
+/logs/
+/tmp/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# 前端
+node_modules/
+dist/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+.zcodeignore
+
+# 模型
+*.onnx
+*.pth
+*.pt
